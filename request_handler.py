@@ -1,7 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-
 from views.user import create_user, login_user
+from views import get_all_categories, get_single_category, update_category, delete_category
 from views import get_all_posts, get_single_post, create_post
 
 
@@ -12,13 +12,17 @@ class HandleRequests(BaseHTTPRequestHandler):
         """Parse the url into the resource and id"""
         path_params = path.split('/')
         resource = path_params[1]
+
         if '?' in resource:
+
             param = resource.split('?')[1]
             resource = resource.split('?')[0]
             pair = param.split('=')
             key = pair[0]
             value = pair[1]
+
             return (resource, key, value)
+
         else:
             id = None
             try:
@@ -51,6 +55,7 @@ class HandleRequests(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        """Handle Get requests to the server"""
         self._set_headers(200)
 
         response = {}
@@ -68,6 +73,20 @@ class HandleRequests(BaseHTTPRequestHandler):
 
         self.wfile.write(response.encode())
 
+        response = {}
+
+        parsed = self.parse_url(self.path)
+        
+        if len(parsed) == 2:
+            ( resource, id ) = parsed
+
+            if resource == "categories":
+                if id is not None:
+                    response = f"{get_single_category(id)}"
+                else:
+                    response = f"{get_all_categories()}"
+
+        self.wfile.write(response.encode())
 
     def do_POST(self):
         """Make a post request to the server"""
@@ -75,7 +94,11 @@ class HandleRequests(BaseHTTPRequestHandler):
         content_len = int(self.headers.get('content-length', 0))
         post_body = json.loads(self.rfile.read(content_len))
         response = ''
+        
+        (resource, id) = self.parse_url(post_body)
+
         (resource, id) = self.parse_url(self.path)
+
 
         if resource == 'login':
             response = login_user(post_body)
@@ -93,12 +116,37 @@ class HandleRequests(BaseHTTPRequestHandler):
 
     def do_PUT(self):
         """Handles PUT requests to the server"""
-        pass
+        content_len = int(self.headers.get('content-length', 0))
+        post_body = self.rfile.read(content_len)
+        post_body = json.loads(post_body)
+
+        # Parse the URL
+        (resource, id) = self.parse_url(self.path)
+
+        success = False
+
+        # Delete a single animal from the list
+        if resource == "categories":
+            success = update_category(id, post_body)
+
+        if success:
+            self._set_headers(204)
+        else:
+            self._set_headers(404)    
+
+        # Encode the new animal/location/employee/customer and send in response
+        self.wfile.write("".encode())
 
     def do_DELETE(self):
         """Handle DELETE Requests"""
-        pass
+        self._set_headers(204)
 
+        (resource, id) = self.parse_url(self.path)
+
+        if resource == "categories":
+            delete_category(id)
+
+        self.wfile.write("".encode())
 
 def main():
     """Starts the server on port 8088 using the HandleRequests class
