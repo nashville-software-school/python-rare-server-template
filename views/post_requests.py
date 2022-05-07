@@ -80,3 +80,5 @@ def create_post(new_post):
         new_post['id'] = id
 
     return json.dumps(new_post)
+
+# this is a test
