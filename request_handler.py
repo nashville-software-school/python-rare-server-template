@@ -1,7 +1,7 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from views.user import create_user, login_user
+from views import get_single_post, get_all_posts, delete_post, update_post
 
 
 class HandleRequests(BaseHTTPRequestHandler):
@@ -50,9 +50,20 @@ class HandleRequests(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        """Handle Get requests to the server"""
-        pass
+        self._set_headers(200)
+        response = {}  # Default response
 
+        # Parse the URL and capture the tuple that is returned
+        (resource, id) = self.parse_url()
+
+        if resource == "posts":
+            if id is not None:
+                response = f"{get_single_post(id)}"
+
+            else:
+                response = f"{get_all_posts()}"
+
+            self.wfile.write(response.encode())
 
     def do_POST(self):
         """Make a post request to the server"""
@@ -70,12 +81,34 @@ class HandleRequests(BaseHTTPRequestHandler):
         self.wfile.write(response.encode())
 
     def do_PUT(self):
-        """Handles PUT requests to the server"""
-        pass
+        self._set_headers(204)
+        content_len = int(self.headers.get('content-length', 0))
+        post_body = self.rfile.read(content_len)
+        post_body = json.loads(post_body)
+
+        # Parse the URL
+        (resource, id) = self.parse_url()
+
+        # Delete a single post from the list
+        if resource == "posts":
+            update_post(id, post_body)
+
+        # Encode the new post and send in response
+        self.wfile.write("".encode())
 
     def do_DELETE(self):
-        """Handle DELETE Requests"""
-        pass
+        # Set a 204 response code
+        self._set_headers(204)
+
+        # Parse the URL
+        (resource, id) = self.parse_url()
+
+        # Delete a single post from the list
+        if resource == "posts":
+            delete_post(id)
+
+        # Encode the new animal and send in response
+        self.wfile.write("".encode())
 
 
 def main():

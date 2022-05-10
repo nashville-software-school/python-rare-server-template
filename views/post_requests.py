@@ -45,7 +45,7 @@ def get_all_posts():
             a.image_url,
             a.content,
             a.approved
-        FROM post a
+        FROM posts a
         """)
 
         # Initialize an empty list to hold all animal representations
@@ -92,7 +92,7 @@ def get_single_post(id):
             a.image_url,
             a.content,
             a.approved
-        FROM post a
+        FROM posts a
         WHERE a.id = ?
         """, (id, ))
 
