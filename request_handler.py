@@ -1,5 +1,8 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
+# import resource
+from views import get_all_categories, create_category
+from views.category_request import delete_category
 
 from views.user import create_user, login_user
 
@@ -19,12 +22,12 @@ class HandleRequests(BaseHTTPRequestHandler):
             value = pair[1]
             return (resource, key, value)
         else:
-            id = None
+            _id = None
             try:
-                id = int(path_params[2])
+                _id = int(path_params[2])
             except (IndexError, ValueError):
                 pass
-            return (resource, id)
+            return (resource, _id)
 
     def _set_headers(self, status):
         """Sets the status code, Content-Type and Access-Control-Allow-Origin
@@ -51,8 +54,42 @@ class HandleRequests(BaseHTTPRequestHandler):
 
     def do_GET(self):
         """Handle Get requests to the server"""
-        pass
+        self._set_headers(200)
 
+        response = {}
+
+        # Parse URL and store entire tuple in a variable
+        parsed = self.parse_url()
+
+        # Response from parse_url() is a tuple with 2
+        # items in it, which means the request was for
+        # `/animals` or `/animals/2`
+        if len(parsed) == 2:
+            (resource, _id) = parsed
+
+            if resource == "categories":
+                # if id is not None:
+                #     response = f"{get_single_category(id)}"
+                # else:
+                response = f"{get_all_categories()}"
+
+        # Response from parse_url() is a tuple with 3
+        # items in it, which means the request was for
+        # `/resource?parameter=value`
+        # elif len(parsed) == 3:
+        #     (resource, key, value) = parsed
+
+        #     # Is the resource `customers` and was there a
+        #     # query parameter that specified the customer
+        #     # email as a filtering value?
+        #     # if key == "location" and resource == "animals":
+        #     #     response = get_animals_by_location(value)
+        #     # if key == "location" and resource == "employees":
+        #     #     response = get_employees_by_location(value)
+        #     if key == "email" and resource == "customers":
+        #         response = get_customers_by_email(value)
+
+        self.wfile.write(response.encode())
 
     def do_POST(self):
         """Make a post request to the server"""
@@ -60,22 +97,41 @@ class HandleRequests(BaseHTTPRequestHandler):
         content_len = int(self.headers.get('content-length', 0))
         post_body = json.loads(self.rfile.read(content_len))
         response = ''
-        resource, _ = self.parse_url()
+        (resource, _id) = self.parse_url()
 
         if resource == 'login':
             response = login_user(post_body)
         if resource == 'register':
             response = create_user(post_body)
 
+        new_category = None
+
+        if resource == 'categories':
+            new_category = create_category(post_body)
+
+        self.wfile.write(f"{new_category}".encode())
         self.wfile.write(response.encode())
 
-    def do_PUT(self):
-        """Handles PUT requests to the server"""
-        pass
+    # def do_PUT(self):
+    #     """Handles PUT requests to the server"""
+    #     pass
 
     def do_DELETE(self):
         """Handle DELETE Requests"""
-        pass
+        # Set a 204 response code
+        self._set_headers(204)
+
+    # Parse the URL
+        (resource, _id) = self.parse_url()
+
+    # Delete a single animal from the list
+        if resource == "animals":
+            delete_category(_id)
+
+    # Encode the new animal and send in response
+        self.wfile.write("".encode())
+
+    # This is to update data
 
 
 def main():
