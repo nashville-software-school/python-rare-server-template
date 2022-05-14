@@ -41,20 +41,20 @@ CATEGORIES = [
 
 
 def create_category(category):
-    # Get the id value of the last animal in the list
-    max_id = CATEGORIES[-1]["id"]
+    with sqlite3.connect("./db.sqlite3") as conn:
+        db_cursor = conn.cursor()
 
-    # Add 1 to whatever that number is
-    new_id = max_id + 1
+        db_cursor.execute("""
+            INSERT INTO Categories
+            ( label )
+            VALUES
+            ( ? );
+                          """, (category['category'], ))
+# fix this: do you need a return?
+        id = db_cursor.lastrowid
+        category['id'] = id
 
-    # Add an `id` property to the animal dictionary
-    category["id"] = new_id
-
-    # Add the animal dictionary to the list
-    CATEGORIES.append(category)
-
-    # Return the dictionary with `id` property added
-    return category
+        return json.dumps(category)
 
 
 def delete_category(_id):
