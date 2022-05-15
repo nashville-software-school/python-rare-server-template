@@ -107,21 +107,34 @@ def get_single_post(id):
         return json.dumps(post.__dict__)
 
 
-def create_post(post):
-    # Get the id value of the last post in the list
-    max_id = POSTS[-1]["id"]
+def create_post(new_post):
+    with sqlite3.connect("./db.sqlite3") as conn:
+        db_cursor = conn.cursor()
 
-    # Add 1 to whatever that number is
-    new_id = max_id + 1
+        db_cursor.execute("""
+            INSERT INTO Posts
+            ( user_id, category_id, title, publication_date, image_url, content, approved )
+            VALUES
+            ( ?, ?, ?, ?, ?, ?, ? );
+            """, (new_post['user_id'],
+                  new_post['category_id'],
+                  new_post['title'],
+                  new_post['publication_date'],
+                  new_post['image_url'],
+                  new_post['content'],
+                  new_post['approved'],))
 
-    # Add an `id` property to the post dictionary
-    post["id"] = new_id
+        # The `lastrowid` property on the cursor will return
+        # the primary key of the last thing that got added to
+        # the database.
+        id = db_cursor.lastrowid
 
-    # Add the post dictionary to the list
-    POSTS.append(post)
+        # Add the `id` property to the animal dictionary that
+        # was sent by the client so that the client sees the
+        # primary key in the response.
+        new_post['id'] = id
 
-    # Return the dictionary with `id` property added
-    return post
+    return json.dumps(new_post)
 
 
 def delete_post(id):
